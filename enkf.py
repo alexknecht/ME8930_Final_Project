@@ -9,7 +9,7 @@ class KoopmanEnKF:
         self.n_params = K_baseline.size  # E.g., 7x11 = 77 parameters
         self.N = n_ensemble
         
-        # 1. INITIALIZE THE PRIOR
+        # INITIALIZE THE PRIOR
         # Flatten the baseline K matrix to act as the mean of our prior distribution
         theta_mean = K_baseline.flatten()
         
@@ -32,9 +32,6 @@ class KoopmanEnKF:
         process_noise = np.random.multivariate_normal(np.zeros(self.n_params), self.Q, self.N).T
         self.ensemble += process_noise
         
-        # ==========================================
-        # VECTORIZED PREDICTION (No more for-loops!)
-        # ==========================================
         # Reshape the (77, 50) ensemble into a 3D Tensor: (50 matrices, 7 rows, 11 cols)
         K_tensor = self.ensemble.T.reshape(self.N, 7, 11)
         
@@ -56,10 +53,7 @@ class KoopmanEnKF:
         K_gain = P_theta_y / P_yy  
         
         y_perturbed = y_true_next + np.random.normal(0, np.sqrt(self.R[0,0]), self.N)
-        
-        # ==========================================
-        # VECTORIZED UPDATE
-        # ==========================================
+
         innovations = y_perturbed - Y_pred # Shape: (50,)
         
         # np.outer instantly multiplies the (77,) gain by the (50,) innovations
