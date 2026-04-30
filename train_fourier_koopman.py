@@ -3,9 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from lifter import FourierLifter # Importing your new class!
 
-# ==========================================
-# 1. LOAD & PREP DATA (00000.csv)
-# ==========================================
+#data load
 print("Loading data and initializing Fourier Lifter...")
 df = pd.read_csv('data/00000.csv').dropna()
 
@@ -17,9 +15,7 @@ road_lataccel = np.sin(df['roll'].values) * 9.81
 
 N = len(df) - 1
 
-# ==========================================
-# 2. THE LIFTING PHASE (The Magic Happens Here)
-# ==========================================
+#lifting
 # We use 3 frequencies: base, 2x, and 4x. 
 # This turns our 1D state into a 7D state (1 raw + 3 sines + 3 cosines)
 lifter = FourierLifter(num_frequencies=3)
@@ -39,9 +35,7 @@ D = np.vstack((v_ego[:N], a_ego[:N], road_lataccel[:N]))
 # Omega now contains the 7D state, 1D input, and 3D disturbance
 Omega = np.vstack((X1_lifted, U, D)) # Shape: (11, N)
 
-# ==========================================
-# 3. SOLVE FOR THE HIGH-DIMENSIONAL KOOPMAN OPERATOR
-# ==========================================
+#solve for koopman
 lambda_reg = 1e-4  
 I = np.eye(Omega.shape[0]) 
 
@@ -59,9 +53,7 @@ np.save('K_baseline.npy', K)
 
 print(f"Koopman Matrix extracted successfully. Shape: {K.shape}")
 
-# ==========================================
-# 4. VALIDATION (Open-Loop Rollout)
-# ==========================================
+#validation
 print("Running open-loop validation in the lifted space...")
 
 # We must track the entire 7D state during the simulation
@@ -83,9 +75,7 @@ for k in range(N - 1):
 # (Since row 0 of our lifted state is always the raw linear state)
 predicted_lataccel = predicted_lifted_states[0, :]
 
-# ==========================================
-# 5. PLOT RESULTS
-# ==========================================
+#visualization
 plt.figure(figsize=(12, 6))
 plt.plot(lataccel[:N], label='Actual lataccel (Ground Truth)', color='orange', linewidth=2, alpha=0.7)
 plt.plot(predicted_lataccel, label='Fourier-Lifted DMDc Prediction', color='blue', linestyle='dashed', linewidth=2)
