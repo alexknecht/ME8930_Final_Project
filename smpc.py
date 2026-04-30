@@ -23,9 +23,6 @@ class StochasticMPC:
     def optimize_steering(self, x_lifted_curr, u_prev, target_lataccels, disturbances, K_ensemble):
         N_ensemble = K_ensemble.shape[1]
         
-        # ==========================================
-        # VECTORIZATION PREP
-        # ==========================================
         # Reshape the (77, 50) ensemble into a 3D Tensor: (50 matrices, 7 rows, 11 cols)
         K_tensor = K_ensemble.T.reshape(N_ensemble, 7, 11)
 
