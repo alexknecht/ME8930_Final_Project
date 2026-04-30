@@ -4,9 +4,7 @@ import matplotlib.pyplot as plt
 from lifter import FourierLifter
 from enkf import KoopmanEnKF
 
-# ==========================================
-# 1. THE PRIOR (Train the Baseline Offline)
-# ==========================================
+#train baseline
 print("Training offline baseline on 00000.csv...")
 df_train = pd.read_csv('data/00000.csv').dropna()
 N_tr = len(df_train) - 1
@@ -21,16 +19,12 @@ Omega_tr = np.vstack((X1_lifted, U_tr, D_tr))
 lambda_reg = 1e-4  
 K_baseline = X2_lifted @ Omega_tr.T @ np.linalg.inv(Omega_tr @ Omega_tr.T + lambda_reg * np.eye(Omega_tr.shape[0]))
 
-# ==========================================
-# 2. INITIALIZE THE REAL-TIME TISAC ENGINE
-# ==========================================
+#initialize TISAC
 print("Initializing EnKF with prior Koopman matrix...")
 # We inject a bit of process noise to allow the matrix to adapt over time
 enkf = KoopmanEnKF(K_baseline, n_ensemble=50, process_noise_std=1e-3, measurement_noise_std=1e-2)
 
-# ==========================================
-# 3. THE UNSEEN ENVIRONMENT (00001.csv)
-# ==========================================
+#test on unseen segments
 print("Running live simulation on unseen route 00001.csv...")
 df_test = pd.read_csv('data/00001.csv').dropna()
 
@@ -53,9 +47,7 @@ adaptive_predictions[0] = lataccel_te[0]
 K_static = K_baseline.copy()
 K_adaptive = K_baseline.copy()
 
-# ==========================================
-# 4. THE LIVE CONTROL LOOP
-# ==========================================
+#first attempt at live control
 for k in range(N_te):
     # 1. Read sensors at current time step
     x_k = lataccel_te[k]
@@ -73,7 +65,6 @@ for k in range(N_te):
     adaptive_next_lifted = K_adaptive @ omega_k
     adaptive_predictions[k+1] = adaptive_next_lifted[0]
     
-    # 3. TISAC UPDATE: The moment of adaptation
     # In a real car, time moves forward here. We now observe the TRUE k+1 state.
     if k < N_te - 1:
         y_true_next = lataccel_te[k+1]
