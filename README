@@ -1,0 +1,27 @@
+To use the code, download the controller.py file into the Comma AI /Controllers 
+subfolder. All other files should be placed directly into the main Comma AI file directory. 
+Although a baseline K matrix is already given (offline trained), this may be re-created with the command:
+
+python train_fourier_koopman.py
+
+After the baseline Koopman matrix has been generated, the custom Comma AI evaluation function 
+may be executed from the main directory using the following command:
+
+python eval.py \
+   --model_path ./models/tinyphysics.onnx \
+   --data_path ./data \
+   --num_segs 100 \
+   --test_controller controller \
+   --baseline_controller pid
+
+This will generate the Comma AI report in the main directory as an HTML file, 
+which may then be opened and evaluated.
+
+If a single run is needed, rather than the full evaluation pipeline, the simple:
+
+    python plot_tisac.py
+
+may be used to run the controller on a single data set (selectable within the code) 
+and to evaluate the controllers performance on that specific segment.
+
+Any further questions regarding usage of the code should be directed to Alex.
