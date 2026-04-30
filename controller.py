@@ -8,20 +8,20 @@ class Controller:
         """
         Initializes the Real-Time TISAC Controller.
         """
-        # 1. Load the offline prior (The Fourier-Lifted DMDc Matrix)
+        #Load the offline prior (The Fourier-Lifted DMDc Matrix)
         try:
             self.K_baseline = np.load('K_baseline.npy')
         except FileNotFoundError:
             raise FileNotFoundError("Please run train_fourier_koopman.py first to generate K_baseline.npy")
 
-        # 2. Initialize the TISAC Architecture Components
+        #Initialize the TISAC Architecture Components
         self.lifter = FourierLifter(num_frequencies=3)
         self.enkf = KoopmanEnKF(self.K_baseline, n_ensemble=50, process_noise_std=1e-3, measurement_noise_std=1e-1)
         
-        # We set the horizon to 10 steps (1 second into the future at 10Hz)
+        #set the horizon to 10 steps (1 second into the future at 10Hz)
         self.smpc = StochasticMPC()
 
-        # 3. Memory for the Recursive Filter
+        #Memory for the Recursive Filter
         # The EnKF needs to remember what it did *last* time to learn from its mistakes
         self.x_lifted_prev = None
         self.u_prev = 0.0
@@ -31,9 +31,6 @@ class Controller:
         """
         The main control loop called by the tinyphysics simulator at every time step.
         """
-        # ==========================================
-        # 1. SENSOR INGESTION
-        # ==========================================
         # Extract current environmental disturbances from the simulator state
         v_ego = state.v_ego
         a_ego = state.a_ego
@@ -43,9 +40,7 @@ class Controller:
         # Lift the current lateral acceleration into the Fourier space
         x_lifted_curr = self.lifter.lift_state(current_lataccel)
 
-        # ==========================================
-        # 2. TISAC UPDATE (The EnKF Recalibration)
-        # ==========================================
+
         # We can only update if we have a past state to compare against current reality
         if self.x_lifted_prev is not None:
             # The EnKF calculates the error between its past prediction and current_lataccel
@@ -60,9 +55,7 @@ class Controller:
         # Extract the current, fully updated ensemble of matrices to feed the MPC
         K_ensemble = self.enkf.ensemble
 
-        # ==========================================
-        # 3. STOCHASTIC MPC FORECASTING
-        # ==========================================
+        #MPC forecasting
         available_steps = len(future_plan.lataccel)
         
         future_targets = []
@@ -93,9 +86,7 @@ class Controller:
             K_ensemble=K_ensemble
         )
 
-        # ==========================================
-        # 4. MEMORY UPDATE
-        # ==========================================
+
         # Save current states to act as the "past" during the next loop
         self.x_lifted_prev = x_lifted_curr
         self.u_prev = optimal_steer
